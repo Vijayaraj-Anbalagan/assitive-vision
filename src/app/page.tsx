@@ -1,14 +1,30 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Navigation, Settings, Home, Volume2, VolumeX, Vibrate, MapPin, AlertTriangle, Flashlight, Mic, AlertCircle, X } from 'lucide-react';
+import { 
+  Camera, Navigation, Settings, Home, Volume2, VolumeX, Vibrate, MapPin, 
+  AlertTriangle, Flashlight, Mic, AlertCircle, X, Battery, BatteryCharging,
+  Wifi, WifiOff, MapPinned, User, Sun, Moon, Languages
+} from 'lucide-react';
 
+type Language = 'en' | 'ta' | 'hi';
+type Theme = 'light' | 'dark';
 
 interface SettingsState {
   voiceEnabled: boolean;
   vibrationEnabled: boolean;
   volume: 'high' | 'medium' | 'low';
   sensitivity: number;
+  theme: Theme;
+  language: Language;
+}
+
+interface Translations {
+  [key: string]: {
+    en: string;
+    ta: string;
+    hi: string;
+  };
 }
 
 interface TutorialStep {
@@ -17,6 +33,44 @@ interface TutorialStep {
   target: string;
 }
 
+// Translation dictionary
+const translations: Translations = {
+  appTitle: { en: 'Assistive Vision', ta: 'உதவி பார்வை', hi: 'सहायक दृष्टि' },
+  appSubtitle: { en: 'Navigation & Safety System', ta: 'வழிசெலுத்தல் மற்றும் பாதுகாப்பு அமைப்பு', hi: 'नेविगेशन और सुरक्षा प्रणाली' },
+  cameraMode: { en: 'Camera Mode', ta: 'கேமரா பயன்முறை', hi: 'कैमरा मोड' },
+  navigation: { en: 'Navigation', ta: 'வழிசெலுத்தல்', hi: 'नेविगेशन' },
+  settings: { en: 'Settings', ta: 'அமைப்புகள்', hi: 'सेटिंग्स' },
+  voice: { en: 'VOICE', ta: 'குரல்', hi: 'आवाज़' },
+  cam: { en: 'CAM', ta: 'கேமரா', hi: 'कैमरा' },
+  sos: { en: 'SOS', ta: 'SOS', hi: 'SOS' },
+  online: { en: 'Online', ta: 'ஆன்லைன்', hi: 'ऑनलाइन' },
+  offline: { en: 'Offline', ta: 'ஆஃப்லைன்', hi: 'ऑफ़लाइन' },
+  listening: { en: 'Listening...', ta: 'கேட்கிறது...', hi: 'सुन रहा है...' },
+  tapToSpeak: { en: 'Tap to speak', ta: 'பேச தட்டவும்', hi: 'बोलने के लिए टैप करें' },
+  swipeUpVoice: { en: 'Swipe up for voice', ta: 'குரலுக்கு மேலே ஸ்வைப் செய்யவும்', hi: 'आवाज़ के लिए ऊपर स्वाइप करें' },
+  startCamera: { en: 'Start Camera', ta: 'கேமராவைத் தொடங்கு', hi: 'कैमरा शुरू करें' },
+  startDetection: { en: 'Start Detection', ta: 'கண்டறிதலைத் தொடங்கு', hi: 'पता लगाना शुरू करें' },
+  stopDetection: { en: 'Stop Detection', ta: 'கண்டறிதலை நிறுத்து', hi: 'पता लगाना बंद करें' },
+  destination: { en: 'Destination', ta: 'இலக்கு', hi: 'गंतव्य' },
+  enterDestination: { en: 'Enter address or place', ta: 'முகவரி அல்லது இடத்தை உள்ளிடவும்', hi: 'पता या स्थान दर्ज करें' },
+  startNavigation: { en: 'Start Navigation', ta: 'வழிசெலுத்தலைத் தொடங்கு', hi: 'नेविगेशन शुरू करें' },
+  stopNavigation: { en: 'Stop Navigation', ta: 'வழிசெலுத்தலை நிறுத்து', hi: 'नेविगेशन बंद करें' },
+  voiceFeedback: { en: 'Voice Feedback', ta: 'குரல் பின்னூட்டம்', hi: 'आवाज़ प्रतिक्रिया' },
+  vibration: { en: 'Vibration', ta: 'அதிர்வு', hi: 'कंपन' },
+  volumeLevel: { en: 'Volume Level', ta: 'ஒலி அளவு', hi: 'वॉल्यूम स्तर' },
+  detectionSensitivity: { en: 'Detection Sensitivity', ta: 'கண்டறிதல் உணர்திறன்', hi: 'पता लगाने की संवेदनशीलता' },
+  high: { en: 'High', ta: 'அதிக', hi: 'उच्च' },
+  medium: { en: 'Medium', ta: 'நடுத்தர', hi: 'मध्यम' },
+  low: { en: 'Low', ta: 'குறைவான', hi: 'कम' },
+  testAlerts: { en: 'Test Alerts', ta: 'எச்சரிக்கைகளைச் சோதிக்கவும்', hi: 'अलर्ट का परीक्षण करें' },
+  darkMode: { en: 'Dark Mode', ta: 'இருள் பயன்முறை', hi: 'डार्क मोड' },
+  lightMode: { en: 'Light Mode', ta: 'ஒளி பயன்முறை', hi: 'लाइट मोड' },
+  language: { en: 'Language', ta: 'மொழி', hi: 'भाषा' },
+  obstacleDetected: { en: 'Obstacle detected ahead', ta: 'முன்னால் தடை கண்டறியப்பட்டது', hi: 'आगे बाधा का पता चला' },
+  emergencySOS: { en: 'Emergency SOS', ta: 'அவசர SOS', hi: 'आपातकालीन SOS' },
+  profile: { en: 'Profile', ta: 'சுயவிவரம்', hi: 'प्रोफ़ाइल' },
+};
+
 const AssistiveVisionPage: React.FC = () => {
   const [currentMode, setCurrentMode] = useState<string>('home');
   const [settings, setSettings] = useState<SettingsState>({
@@ -24,6 +78,8 @@ const AssistiveVisionPage: React.FC = () => {
     vibrationEnabled: true,
     volume: 'high',
     sensitivity: 50,
+    theme: 'dark',
+    language: 'en',
   });
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
   const [isNavigating, setIsNavigating] = useState<boolean>(false);
@@ -37,6 +93,8 @@ const AssistiveVisionPage: React.FC = () => {
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
   const [tutorialStep, setTutorialStep] = useState<number>(0);
   const [isEmergencyActive, setIsEmergencyActive] = useState<boolean>(false);
+  const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -77,12 +135,74 @@ const AssistiveVisionPage: React.FC = () => {
 
   const voiceCommands = ['navigate', 'camera', 'settings', 'stop'];
 
+  // Translation helper
+  const t = (key: string): string => {
+    return translations[key]?.[settings.language] || translations[key]?.en || key;
+  };
+
+  // Theme initialization
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = window.localStorage.getItem('theme') as Theme;
+      const savedLanguage = window.localStorage.getItem('language') as Language;
+      
+      if (savedTheme) {
+        setSettings(prev => ({ ...prev, theme: savedTheme }));
+      }
+      if (savedLanguage) {
+        setSettings(prev => ({ ...prev, language: savedLanguage }));
+      }
+      
+      // Apply theme to document
+      if (savedTheme === 'light') {
+        document.documentElement.classList.add('light');
+      } else {
+        document.documentElement.classList.remove('light');
+      }
+    }
+  }, []);
+
+  // Update theme when settings change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('theme', settings.theme);
+      window.localStorage.setItem('language', settings.language);
+      
+      if (settings.theme === 'light') {
+        document.documentElement.classList.add('light');
+      } else {
+        document.documentElement.classList.remove('light');
+      }
+    }
+  }, [settings.theme, settings.language]);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const tutorialShown = window.localStorage.getItem('tutorialShown');
       if (!tutorialShown) {
         setShowTutorial(true);
       }
+    }
+    // network
+    if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine);
+      const onOnline = () => setIsOnline(true);
+      const onOffline = () => setIsOnline(false);
+      window.addEventListener('online', onOnline);
+      window.addEventListener('offline', onOffline);
+
+      // battery
+      if ((navigator as any).getBattery) {
+        (navigator as any).getBattery().then((bat: any) => {
+          setBatteryLevel(Math.round(bat.level * 100));
+          bat.addEventListener('levelchange', () => setBatteryLevel(Math.round(bat.level * 100)));
+        });
+      }
+
+      return () => {
+        window.removeEventListener('online', onOnline);
+        window.removeEventListener('offline', onOffline);
+      };
     }
   }, []);
 
@@ -427,26 +547,38 @@ const AssistiveVisionPage: React.FC = () => {
     const step = tutorialSteps[tutorialStep];
 
     return (
-      <div className="fixed inset-0 z-40 bg-black/70 flex items-center justify-center p-6">
-        <div className="bg-white text-gray-900 rounded-2xl p-8 max-w-md shadow-2xl">
+      <div className="fixed inset-0 z-40 bg-black/70 flex items-center justify-center p-4 sm:p-6">
+        <div className={`rounded-2xl p-6 sm:p-8 max-w-md shadow-2xl ${
+          settings.theme === 'light' 
+            ? 'bg-white text-gray-900' 
+            : 'bg-gray-800 text-white'
+        }`}>
           <div className="flex justify-between items-start mb-4">
-            <h3 className="text-2xl font-bold">{step.title}</h3>
+            <h3 className="text-xl sm:text-2xl font-bold">{step.title}</h3>
             <button
               onClick={closeTutorial}
-              className="text-gray-500 hover:text-gray-700"
+              className={`transition-colors ${
+                settings.theme === 'light'
+                  ? 'text-gray-500 hover:text-gray-700'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
               aria-label="Close tutorial"
             >
               <X size={24} />
             </button>
           </div>
-          <p className="text-lg mb-6 leading-relaxed">{step.message}</p>
+          <p className={`text-base sm:text-lg mb-6 leading-relaxed ${
+            settings.theme === 'light' ? 'text-gray-700' : 'text-gray-300'
+          }`}>{step.message}</p>
           <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500">
+            <span className={`text-sm ${
+              settings.theme === 'light' ? 'text-gray-500' : 'text-gray-400'
+            }`}>
               {tutorialStep + 1} / {tutorialSteps.length}
             </span>
             <button
               onClick={nextTutorialStep}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700"
+              className="bg-blue-600 text-white px-5 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all hover:scale-105 shadow-lg"
               aria-label={tutorialStep === tutorialSteps.length - 1 ? 'Finish tutorial' : 'Next step'}
             >
               {tutorialStep === tutorialSteps.length - 1 ? 'Get Started' : 'Next'}
@@ -460,14 +592,23 @@ const AssistiveVisionPage: React.FC = () => {
   const AudioVisualizer: React.FC = () => {
     if (!isListening) return null;
 
+    const barCount = 12;
+    const bars = Array.from({ length: barCount }, (_, i) => {
+      const heightMultiplier = Math.sin((i / barCount) * Math.PI) + 0.5;
+      const baseHeight = 12;
+      const dynamicHeight = audioLevel * heightMultiplier * 0.8;
+      return Math.max(baseHeight, Math.min(80, baseHeight + dynamicHeight));
+    });
+
     return (
-      <div className="flex items-center justify-center space-x-2 my-4">
-        {[...Array(5)].map((_, i) => (
+      <div className="flex items-center justify-center gap-1.5 my-6 h-24">
+        {bars.map((height, i) => (
           <div
             key={i}
-            className="bg-blue-500 w-2 rounded-full transition-all duration-100"
+            className="bg-linear-to-t from-blue-500 via-blue-400 to-blue-300 dark:from-blue-600 dark:via-blue-500 dark:to-blue-400 w-1.5 rounded-full transition-all duration-100 ease-out shadow-lg"
             style={{
-              height: `${Math.max(20, audioLevel * (i + 1) * 0.5)}px`,
+              height: `${height}px`,
+              animationDelay: `${i * 0.05}s`,
             }}
           />
         ))}
@@ -480,72 +621,152 @@ const AssistiveVisionPage: React.FC = () => {
       <>
         <EmergencyOverlay />
         <TutorialTooltip />
-        <div className="min-h-screen bg-linear-to-b from-gray-900 to-gray-800 text-white p-6">
-          <div className="max-w-md mx-auto">
-            <h1 className="text-4xl font-bold text-center mb-2 mt-8">Assistive Vision</h1>
-            <p className="text-center text-gray-300 mb-8 text-lg">Navigation & Safety System</p>
+        <div className={`min-h-screen transition-colors duration-300 ${
+          settings.theme === 'light' 
+            ? 'bg-linear-to-b from-gray-50 to-gray-100 text-gray-900' 
+            : 'bg-linear-to-b from-gray-900 to-gray-800 text-white'
+        } p-4 sm:p-6`}>
+          <div className="max-w-md mx-auto min-h-screen flex flex-col relative pb-32">
+            {/* Top status row */}
+            <div className="flex justify-between items-center mt-4 sm:mt-6 mb-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className={`flex items-center gap-1.5 text-xs sm:text-sm ${
+                  settings.theme === 'light' ? 'text-gray-700' : 'text-gray-300'
+                }`}>
+                  {batteryLevel !== null && batteryLevel > 20 ? (
+                    <BatteryCharging size={18} className="text-green-500" />
+                  ) : (
+                    <Battery size={18} className={batteryLevel !== null && batteryLevel < 20 ? 'text-red-500' : 'text-gray-500'} />
+                  )}
+                  <span className="font-medium">{batteryLevel !== null ? `${batteryLevel}%` : '—'}</span>
+                </div>
 
-            <div className="mb-8 bg-gray-800 rounded-xl p-4">
-              <button
-                onClick={isListening ? stopListening : startListening}
-                className={`w-full flex items-center justify-center space-x-3 py-4 rounded-lg font-bold text-xl ${
-                  isListening ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-                aria-label={isListening ? 'Stop listening' : 'Start voice control'}
-              >
-                <Mic size={32} />
-                <span>{isListening ? 'Listening...' : 'Voice Control'}</span>
-              </button>
-              <AudioVisualizer />
-              {recognizedCommand && (
-                <p className="text-center text-green-400 mt-2">Command: {recognizedCommand}</p>
-              )}
-              <p className="text-center text-gray-400 text-sm mt-2">
-                Say: navigate, camera, settings, or stop
-              </p>
+                <div className={`flex items-center gap-1.5 text-xs sm:text-sm ${
+                  settings.theme === 'light' ? 'text-gray-700' : 'text-gray-300'
+                }`}>
+                  {isOnline ? (
+                    <Wifi size={18} className="text-green-500" />
+                  ) : (
+                    <WifiOff size={18} className="text-red-500" />
+                  )}
+                  <span className="font-medium">{t('online')}</span>
+                </div>
+
+                <MapPinned size={18} className={settings.theme === 'light' ? 'text-blue-600' : 'text-blue-400'} />
+              </div>
             </div>
 
-            <div className="space-y-6">
+            {/* App Title */}
+            <div className="text-center mb-6 sm:mb-8">
+              <h1 className={`text-3xl sm:text-4xl font-bold mb-1 ${
+                settings.theme === 'light' ? 'text-gray-900' : 'text-white'
+              }`}>{t('appTitle')}</h1>
+              <p className={`text-sm sm:text-base ${
+                settings.theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+              }`}>{t('appSubtitle')}</p>
+            </div>
+
+            {/* Three small oval buttons */}
+            <div className="flex items-center justify-between gap-2 mb-8 sm:mb-12">
               <button
-                onClick={() => switchMode('camera')}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-8 rounded-2xl flex items-center justify-center space-x-4 text-2xl font-bold shadow-lg transition"
-                aria-label="Start Camera Detection Mode"
+                onClick={() => { switchMode('camera'); startCamera(); }}
+                className={`flex-1 py-3 sm:py-4 px-2 rounded-full text-sm sm:text-lg font-semibold shadow-lg transition-all hover:scale-105 active:scale-95 ${
+                  settings.theme === 'light'
+                    ? 'bg-blue-100 text-blue-900 hover:bg-blue-200'
+                    : 'bg-gray-800/80 text-white hover:bg-gray-700/80'
+                }`}
+                aria-label={t('cam')}
               >
-                <Camera size={48} />
-                <span>Camera Mode</span>
+                <Camera className="mx-auto mb-1" size={20} />
+                <span className="block">{t('cam')}</span>
               </button>
 
               <button
                 onClick={() => switchMode('navigation')}
-                className="w-full bg-green-600 hover:bg-green-700 text-white py-8 rounded-2xl flex items-center justify-center space-x-4 text-2xl font-bold shadow-lg transition"
-                aria-label="Start Navigation Mode"
+                className={`flex-1 py-3 sm:py-4 px-2 rounded-full text-sm sm:text-lg font-semibold shadow-lg transition-all hover:scale-105 active:scale-95 ${
+                  settings.theme === 'light'
+                    ? 'bg-green-100 text-green-900 hover:bg-green-200'
+                    : 'bg-gray-800/80 text-white hover:bg-gray-700/80'
+                }`}
+                aria-label={t('navigation')}
               >
-                <Navigation size={48} />
-                <span>Navigation</span>
+                <Navigation className="mx-auto mb-1" size={20} />
+                <span className="block text-xs sm:text-sm">NAVI</span>
               </button>
 
               <button
                 onClick={triggerEmergency}
-                className="w-full bg-red-600 hover:bg-red-700 text-white py-8 rounded-2xl flex items-center justify-center space-x-4 text-2xl font-bold shadow-lg transition"
-                aria-label="Emergency SOS"
+                className="flex-1 py-3 sm:py-4 px-2 rounded-full text-sm sm:text-lg font-semibold shadow-lg transition-all hover:scale-105 active:scale-95 bg-red-600 text-white hover:bg-red-700"
+                aria-label={t('sos')}
               >
-                <AlertCircle size={48} />
-                <span>Emergency SOS</span>
-              </button>
-
-              <button
-                onClick={() => switchMode('settings')}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-8 rounded-2xl flex items-center justify-center space-x-4 text-2xl font-bold shadow-lg transition"
-                aria-label="Open Settings"
-              >
-                <Settings size={48} />
-                <span>Settings</span>
+                <AlertCircle className="mx-auto mb-1" size={20} />
+                <span className="block">{t('sos')}</span>
               </button>
             </div>
 
-            <div className="mt-12 text-center text-gray-400 text-sm">
-              <p>Designed for accessibility</p>
-              <p className="mt-2">Voice & Haptic Feedback Enabled</p>
+            {/* Large central voice button */}
+            <div className="flex flex-col items-center justify-center flex-1 my-4">
+              <button
+                onClick={isListening ? stopListening : startListening}
+                className={`w-48 h-48 sm:w-56 sm:h-56 rounded-full flex flex-col items-center justify-center shadow-2xl transition-all duration-300 relative ${
+                  isListening 
+                    ? 'scale-95 bg-red-600 animate-pulse' 
+                    : settings.theme === 'light'
+                      ? 'bg-blue-600 hover:bg-blue-700 hover:scale-105'
+                      : 'bg-blue-600 hover:bg-blue-700 hover:scale-105'
+                }`}
+                aria-label={t('voice')}
+              >
+                <Mic size={48} className="mb-2" />
+                <span className="text-2xl sm:text-3xl font-bold text-white">{t('voice')}</span>
+                <span className="text-xs sm:text-sm mt-2 text-white/90">
+                  {isListening ? t('listening') : t('tapToSpeak')}
+                </span>
+                {isListening && (
+                  <div className="absolute inset-0 rounded-full border-4 border-white/30 animate-ping" />
+                )}
+              </button>
+              
+              {isListening && <AudioVisualizer />}
+              
+              {recognizedCommand && (
+                <div className="mt-4 px-6 py-2 bg-green-500/20 border border-green-500 rounded-full">
+                  <span className="text-green-400 font-semibold">Command: {recognizedCommand}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Swipe hint and bottom controls */}
+            <div className="absolute left-4 right-4 bottom-6 flex items-center justify-between">
+              <button
+                onClick={() => switchMode('settings')}
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 ${
+                  settings.theme === 'light'
+                    ? 'bg-white text-gray-900 hover:bg-gray-100'
+                    : 'bg-gray-800/80 text-white hover:bg-gray-700/80'
+                }`}
+                aria-label={t('profile')}
+              >
+                <User size={24} />
+              </button>
+
+              <div className="text-center">
+                <div className={`text-xs sm:text-sm font-semibold ${
+                  settings.theme === 'light' ? 'text-gray-700' : 'text-gray-300'
+                }`}>{t('swipeUpVoice')}</div>
+              </div>
+
+              <button
+                onClick={() => switchMode('settings')}
+                className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 ${
+                  settings.theme === 'light'
+                    ? 'bg-white text-gray-900 hover:bg-gray-100'
+                    : 'bg-gray-800/80 text-white hover:bg-gray-700/80'
+                }`}
+                aria-label={t('settings')}
+              >
+                <Settings size={24} />
+              </button>
             </div>
           </div>
         </div>
@@ -569,66 +790,67 @@ const AssistiveVisionPage: React.FC = () => {
 
             <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full opacity-50" />
 
-            <div className="absolute top-0 left-0 right-0 p-4 bg-linear-to-b from-black/70 to-transparent">
+            <div className="absolute top-0 left-0 right-0 p-4 bg-linear-to-b from-black/80 to-transparent">
               <div className="flex justify-between items-center">
                 <button
                   onClick={() => switchMode('home')}
-                  className="bg-gray-800/80 text-white p-4 rounded-full hover:bg-gray-700/80"
+                  className="bg-gray-800/90 text-white p-3 sm:p-4 rounded-full hover:bg-gray-700/90 transition-all hover:scale-110 shadow-lg"
                   aria-label="Return to home"
                 >
-                  <Home size={32} />
+                  <Home size={28} />
                 </button>
-                <h2 className="text-2xl font-bold">Camera Mode</h2>
+                <h2 className="text-xl sm:text-2xl font-bold">{t('cameraMode')}</h2>
                 {isCameraActive && (
                   <button
                     onClick={toggleFlashlight}
-                    className={`p-4 rounded-full ${
-                      isFlashlightOn ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-gray-800/80 hover:bg-gray-700/80'
+                    className={`p-3 sm:p-4 rounded-full transition-all hover:scale-110 shadow-lg ${
+                      isFlashlightOn ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-gray-800/90 hover:bg-gray-700/90'
                     }`}
                     aria-label={isFlashlightOn ? 'Turn off flashlight' : 'Turn on flashlight'}
                   >
-                    <Flashlight size={32} />
+                    <Flashlight size={28} />
                   </button>
                 )}
               </div>
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 p-6 bg-linear-to-t from-black/90 to-transparent">
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-linear-to-t from-black/90 to-transparent">
               {lastAlert && (
-                <div className="bg-red-600 text-white p-4 rounded-xl mb-4 flex items-center space-x-3">
-                  <AlertTriangle size={32} />
-                  <span className="text-xl font-bold">{lastAlert}</span>
+                <div className="bg-red-600 text-white p-4 rounded-xl mb-4 flex items-center gap-3 animate-pulse shadow-lg">
+                  <AlertTriangle size={32} className="shrink-0" />
+                  <span className="text-lg sm:text-xl font-bold">{t('obstacleDetected')}</span>
                 </div>
               )}
 
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {!isCameraActive && (
                   <button
                     onClick={startCamera}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-xl text-2xl font-bold"
-                    aria-label="Start camera"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 sm:py-6 rounded-xl text-xl sm:text-2xl font-bold transition-all hover:scale-105 shadow-lg flex items-center justify-center gap-3"
+                    aria-label={t('startCamera')}
                   >
-                    Start Camera
+                    <Camera size={28} />
+                    {t('startCamera')}
                   </button>
                 )}
 
                 {isCameraActive && !detectionActive && (
                   <button
                     onClick={startDetection}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-6 rounded-xl text-2xl font-bold"
-                    aria-label="Start edge detection"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white py-4 sm:py-6 rounded-xl text-xl sm:text-2xl font-bold transition-all hover:scale-105 shadow-lg"
+                    aria-label={t('startDetection')}
                   >
-                    Start Detection
+                    {t('startDetection')}
                   </button>
                 )}
 
                 {detectionActive && (
                   <button
                     onClick={stopDetection}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white py-6 rounded-xl text-2xl font-bold"
-                    aria-label="Stop detection"
+                    className="w-full bg-red-600 hover:bg-red-700 text-white py-4 sm:py-6 rounded-xl text-xl sm:text-2xl font-bold transition-all hover:scale-105 shadow-lg"
+                    aria-label={t('stopDetection')}
                   >
-                    Stop Detection
+                    {t('stopDetection')}
                   </button>
                 )}
               </div>
@@ -643,64 +865,84 @@ const AssistiveVisionPage: React.FC = () => {
     return (
       <>
         <EmergencyOverlay />
-        <div className="min-h-screen bg-gray-900 text-white">
-          <div className="max-w-md mx-auto p-6">
-            <div className="flex justify-between items-center mb-8">
+        <div className={`min-h-screen transition-colors duration-300 ${
+          settings.theme === 'light' 
+            ? 'bg-linear-to-b from-gray-50 to-gray-100 text-gray-900' 
+            : 'bg-linear-to-b from-gray-900 to-gray-800 text-white'
+        }`}>
+          <div className="max-w-md mx-auto p-4 sm:p-6">
+            <div className="flex justify-between items-center mb-6 sm:mb-8">
               <button
                 onClick={() => switchMode('home')}
-                className="bg-gray-800 text-white p-3 rounded-full hover:bg-gray-700"
+                className={`p-3 rounded-full transition-all hover:scale-110 shadow-lg ${
+                  settings.theme === 'light'
+                    ? 'bg-white text-gray-900 hover:bg-gray-100'
+                    : 'bg-gray-800 text-white hover:bg-gray-700'
+                }`}
                 aria-label="Return to home"
               >
-                <Home size={32} />
+                <Home size={28} />
               </button>
-              <h2 className="text-3xl font-bold">Navigation</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold">{t('navigation')}</h2>
               <div className="w-14" />
             </div>
 
             <div className="space-y-6">
               <div>
-                <label className="block text-xl mb-3 font-semibold">Destination</label>
+                <label className="block text-lg sm:text-xl mb-3 font-semibold">{t('destination')}</label>
                 <input
                   type="text"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
-                  placeholder="Enter address or place"
-                  className="w-full bg-gray-800 text-white p-5 rounded-xl text-xl border-2 border-gray-700 focus:border-blue-500 focus:outline-none"
-                  aria-label="Enter destination address"
+                  placeholder={t('enterDestination')}
+                  className={`w-full p-4 sm:p-5 rounded-xl text-lg sm:text-xl border-2 focus:outline-none transition-colors ${
+                    settings.theme === 'light'
+                      ? 'bg-white text-gray-900 border-gray-300 focus:border-blue-500'
+                      : 'bg-gray-800 text-white border-gray-700 focus:border-blue-500'
+                  }`}
+                  aria-label={t('enterDestination')}
                 />
               </div>
 
               {!isNavigating ? (
                 <button
                   onClick={startNavigation}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-6 rounded-xl text-2xl font-bold flex items-center justify-center space-x-3"
-                  aria-label="Start navigation"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-5 sm:py-6 rounded-xl text-xl sm:text-2xl font-bold flex items-center justify-center gap-3 transition-all hover:scale-105 shadow-lg"
+                  aria-label={t('startNavigation')}
                 >
-                  <MapPin size={32} />
-                  <span>Start Navigation</span>
+                  <MapPin size={28} />
+                  <span>{t('startNavigation')}</span>
                 </button>
               ) : (
                 <div className="space-y-4">
-                  <div className="bg-blue-600 p-6 rounded-xl">
-                    <p className="text-2xl font-bold mb-2">Navigating to:</p>
-                    <p className="text-xl">{destination}</p>
-                    <p className="text-lg mt-4 text-blue-200">Follow voice instructions</p>
+                  <div className="bg-blue-600 p-6 rounded-xl shadow-lg">
+                    <p className="text-xl sm:text-2xl font-bold mb-2">Navigating to:</p>
+                    <p className="text-lg sm:text-xl">{destination}</p>
+                    <p className="text-base sm:text-lg mt-4 text-blue-200">Follow voice instructions</p>
                   </div>
 
                   <button
                     onClick={stopNavigation}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white py-6 rounded-xl text-2xl font-bold"
-                    aria-label="Stop navigation"
+                    className="w-full bg-red-600 hover:bg-red-700 text-white py-5 sm:py-6 rounded-xl text-xl sm:text-2xl font-bold transition-all hover:scale-105 shadow-lg"
+                    aria-label={t('stopNavigation')}
                   >
-                    Stop Navigation
+                    {t('stopNavigation')}
                   </button>
                 </div>
               )}
 
-              <div className="bg-gray-800 rounded-xl p-8 text-center border-2 border-gray-700">
-                <Navigation size={64} className="mx-auto mb-4 text-gray-500" />
-                <p className="text-gray-400 text-lg">Map view</p>
-                <p className="text-gray-500 text-sm mt-2">
+              <div className={`rounded-xl p-8 text-center border-2 ${
+                settings.theme === 'light'
+                  ? 'bg-white border-gray-300'
+                  : 'bg-gray-800 border-gray-700'
+              }`}>
+                <Navigation size={64} className={`mx-auto mb-4 ${
+                  settings.theme === 'light' ? 'text-gray-400' : 'text-gray-500'
+                }`} />
+                <p className={settings.theme === 'light' ? 'text-gray-600' : 'text-gray-400'}>Map view</p>
+                <p className={`text-sm mt-2 ${
+                  settings.theme === 'light' ? 'text-gray-500' : 'text-gray-500'
+                }`}>
                   Integrate Google Maps API for full functionality
                 </p>
               </div>
@@ -715,28 +957,110 @@ const AssistiveVisionPage: React.FC = () => {
     return (
       <>
         <EmergencyOverlay />
-        <div className="min-h-screen bg-gray-900 text-white">
-          <div className="max-w-md mx-auto p-6">
-            <div className="flex justify-between items-center mb-8">
+        <div className={`min-h-screen transition-colors duration-300 ${
+          settings.theme === 'light' 
+            ? 'bg-linear-to-b from-gray-50 to-gray-100 text-gray-900' 
+            : 'bg-linear-to-b from-gray-900 to-gray-800 text-white'
+        }`}>
+          <div className="max-w-md mx-auto p-4 sm:p-6">
+            <div className="flex justify-between items-center mb-6 sm:mb-8">
               <button
                 onClick={() => switchMode('home')}
-                className="bg-gray-800 text-white p-3 rounded-full hover:bg-gray-700"
+                className={`p-3 rounded-full transition-all hover:scale-110 shadow-lg ${
+                  settings.theme === 'light'
+                    ? 'bg-white text-gray-900 hover:bg-gray-100'
+                    : 'bg-gray-800 text-white hover:bg-gray-700'
+                }`}
                 aria-label="Return to home"
               >
-                <Home size={32} />
+                <Home size={28} />
               </button>
-              <h2 className="text-3xl font-bold">Settings</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold">{t('settings')}</h2>
               <div className="w-14" />
             </div>
 
-            <div className="space-y-6">
-              <div className="bg-gray-800 p-6 rounded-xl">
+            <div className="space-y-4 sm:space-y-6">
+              {/* Theme Toggle */}
+              <div className={`p-5 sm:p-6 rounded-xl shadow-lg ${
+                settings.theme === 'light' ? 'bg-white' : 'bg-gray-800'
+              }`}>
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-4">
-                    {settings.voiceEnabled ? <Volume2 size={32} /> : <VolumeX size={32} />}
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    {settings.theme === 'light' ? <Sun size={28} /> : <Moon size={28} />}
                     <div>
-                      <p className="text-2xl font-bold">Voice Feedback</p>
-                      <p className="text-gray-400">Audio alerts and instructions</p>
+                      <p className="text-xl sm:text-2xl font-bold">{settings.theme === 'light' ? t('lightMode') : t('darkMode')}</p>
+                      <p className={`text-sm ${settings.theme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>
+                        Theme preference
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const newTheme = settings.theme === 'light' ? 'dark' : 'light';
+                      setSettings((prev) => ({ ...prev, theme: newTheme }));
+                      speak(`${newTheme === 'light' ? 'Light' : 'Dark'} mode enabled`);
+                    }}
+                    className={`w-16 sm:w-20 h-9 sm:h-10 rounded-full transition relative ${
+                      settings.theme === 'light' ? 'bg-blue-600' : 'bg-gray-600'
+                    }`}
+                    aria-label={`Switch to ${settings.theme === 'light' ? 'dark' : 'light'} mode`}
+                  >
+                    <div
+                      className={`w-7 sm:w-8 h-7 sm:h-8 bg-white rounded-full absolute top-1 transition-all duration-300 ${
+                        settings.theme === 'light' ? 'left-8 sm:left-11' : 'left-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Language Selector */}
+              <div className={`p-5 sm:p-6 rounded-xl shadow-lg ${
+                settings.theme === 'light' ? 'bg-white' : 'bg-gray-800'
+              }`}>
+                <div className="flex items-center gap-3 sm:gap-4 mb-4">
+                  <Languages size={28} />
+                  <p className="text-xl sm:text-2xl font-bold">{t('language')}</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  {[
+                    { code: 'en' as Language, label: 'English' },
+                    { code: 'ta' as Language, label: 'தமிழ்' },
+                    { code: 'hi' as Language, label: 'हिंदी' }
+                  ].map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        setSettings((prev) => ({ ...prev, language: lang.code }));
+                        speak(`Language changed to ${lang.label}`);
+                      }}
+                      className={`p-3 sm:p-4 rounded-lg text-base sm:text-lg font-semibold transition-all hover:scale-105 ${
+                        settings.language === lang.code
+                          ? 'bg-blue-600 text-white shadow-lg'
+                          : settings.theme === 'light'
+                            ? 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                      aria-label={`Set language to ${lang.label}`}
+                    >
+                      {lang.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Voice Feedback */}
+              <div className={`p-5 sm:p-6 rounded-xl shadow-lg ${
+                settings.theme === 'light' ? 'bg-white' : 'bg-gray-800'
+              }`}>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    {settings.voiceEnabled ? <Volume2 size={28} /> : <VolumeX size={28} />}
+                    <div>
+                      <p className="text-xl sm:text-2xl font-bold">{t('voiceFeedback')}</p>
+                      <p className={`text-sm ${settings.theme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>
+                        Audio alerts and instructions
+                      </p>
                     </div>
                   </div>
                   <button
@@ -744,27 +1068,32 @@ const AssistiveVisionPage: React.FC = () => {
                       setSettings((prev) => ({ ...prev, voiceEnabled: !prev.voiceEnabled }));
                       speak(`Voice feedback ${!settings.voiceEnabled ? 'enabled' : 'disabled'}`);
                     }}
-                    className={`w-20 h-10 rounded-full transition relative ${
+                    className={`w-16 sm:w-20 h-9 sm:h-10 rounded-full transition relative ${
                       settings.voiceEnabled ? 'bg-green-600' : 'bg-gray-600'
                     }`}
                     aria-label={`Voice feedback ${settings.voiceEnabled ? 'enabled' : 'disabled'}`}
                   >
                     <div
-                      className={`w-8 h-8 bg-white rounded-full absolute top-1 transition-all duration-300 ${
-                        settings.voiceEnabled ? 'left-11' : 'left-1'
+                      className={`w-7 sm:w-8 h-7 sm:h-8 bg-white rounded-full absolute top-1 transition-all duration-300 ${
+                        settings.voiceEnabled ? 'left-8 sm:left-11' : 'left-1'
                       }`}
                     />
                   </button>
                 </div>
               </div>
 
-              <div className="bg-gray-800 p-6 rounded-xl">
+              {/* Vibration */}
+              <div className={`p-5 sm:p-6 rounded-xl shadow-lg ${
+                settings.theme === 'light' ? 'bg-white' : 'bg-gray-800'
+              }`}>
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-4">
-                    <Vibrate size={32} />
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <Vibrate size={28} />
                     <div>
-                      <p className="text-2xl font-bold">Vibration</p>
-                      <p className="text-gray-400">Haptic feedback alerts</p>
+                      <p className="text-xl sm:text-2xl font-bold">{t('vibration')}</p>
+                      <p className={`text-sm ${settings.theme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>
+                        Haptic feedback alerts
+                      </p>
                     </div>
                   </div>
                   <button
@@ -775,22 +1104,25 @@ const AssistiveVisionPage: React.FC = () => {
                       }));
                       speak(`Vibration ${!settings.vibrationEnabled ? 'enabled' : 'disabled'}`);
                     }}
-                    className={`w-20 h-10 rounded-full transition relative ${
+                    className={`w-16 sm:w-20 h-9 sm:h-10 rounded-full transition relative ${
                       settings.vibrationEnabled ? 'bg-green-600' : 'bg-gray-600'
                     }`}
                     aria-label={`Vibration ${settings.vibrationEnabled ? 'enabled' : 'disabled'}`}
                   >
                     <div
-                      className={`w-8 h-8 bg-white rounded-full absolute top-1 transition-all duration-300 ${
-                        settings.vibrationEnabled ? 'left-11' : 'left-1'
+                      className={`w-7 sm:w-8 h-7 sm:h-8 bg-white rounded-full absolute top-1 transition-all duration-300 ${
+                        settings.vibrationEnabled ? 'left-8 sm:left-11' : 'left-1'
                       }`}
                     />
                   </button>
                 </div>
               </div>
 
-              <div className="bg-gray-800 p-6 rounded-xl">
-                <p className="text-2xl font-bold mb-4">Volume Level</p>
+              {/* Volume Level */}
+              <div className={`p-5 sm:p-6 rounded-xl shadow-lg ${
+                settings.theme === 'light' ? 'bg-white' : 'bg-gray-800'
+              }`}>
+                <p className="text-xl sm:text-2xl font-bold mb-4">{t('volumeLevel')}</p>
                 <div className="space-y-3">
                   {(['high', 'medium', 'low'] as const).map((level) => (
                     <button
@@ -799,22 +1131,29 @@ const AssistiveVisionPage: React.FC = () => {
                         setSettings((prev) => ({ ...prev, volume: level }));
                         speak(`Volume set to ${level}`);
                       }}
-                      className={`w-full p-4 rounded-lg text-xl font-semibold transition ${
+                      className={`w-full p-3 sm:p-4 rounded-lg text-lg sm:text-xl font-semibold transition-all hover:scale-105 ${
                         settings.volume === level
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          ? 'bg-blue-600 text-white shadow-lg'
+                          : settings.theme === 'light'
+                            ? 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                       }`}
                       aria-label={`Set volume to ${level}`}
                     >
-                      {level.charAt(0).toUpperCase() + level.slice(1)}
+                      {t(level)}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-gray-800 p-6 rounded-xl">
-                <p className="text-2xl font-bold mb-4">Detection Sensitivity</p>
-                <p className="text-gray-400 mb-4">Adjust edge detection threshold</p>
+              {/* Detection Sensitivity */}
+              <div className={`p-5 sm:p-6 rounded-xl shadow-lg ${
+                settings.theme === 'light' ? 'bg-white' : 'bg-gray-800'
+              }`}>
+                <p className="text-xl sm:text-2xl font-bold mb-4">{t('detectionSensitivity')}</p>
+                <p className={`text-sm mb-4 ${settings.theme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>
+                  Adjust edge detection threshold
+                </p>
                 <div className="space-y-4">
                   <input
                     type="range"
@@ -827,13 +1166,17 @@ const AssistiveVisionPage: React.FC = () => {
                     }}
                     onMouseUp={() => speak(`Sensitivity set to ${settings.sensitivity} percent`)}
                     onTouchEnd={() => speak(`Sensitivity set to ${settings.sensitivity} percent`)}
-                    className="w-full h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    className={`w-full h-3 rounded-lg appearance-none cursor-pointer accent-blue-600 ${
+                      settings.theme === 'light' ? 'bg-gray-300' : 'bg-gray-700'
+                    }`}
                     aria-label="Adjust detection sensitivity"
                   />
-                  <div className="flex justify-between text-sm text-gray-400">
-                    <span>Low</span>
-                    <span className="text-blue-400 font-bold text-lg">{settings.sensitivity}%</span>
-                    <span>High</span>
+                  <div className={`flex justify-between text-sm ${
+                    settings.theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+                  }`}>
+                    <span>{t('low')}</span>
+                    <span className="text-blue-500 font-bold text-base sm:text-lg">{settings.sensitivity}%</span>
+                    <span>{t('high')}</span>
                   </div>
                 </div>
               </div>
@@ -843,10 +1186,10 @@ const AssistiveVisionPage: React.FC = () => {
                   speak('Testing voice and vibration');
                   vibrate([200, 100, 200]);
                 }}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-5 rounded-xl text-xl font-bold"
-                aria-label="Test voice and vibration"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-4 sm:py-5 rounded-xl text-lg sm:text-xl font-bold transition-all hover:scale-105 shadow-lg"
+                aria-label={t('testAlerts')}
               >
-                Test Alerts
+                {t('testAlerts')}
               </button>
 
               <button
@@ -858,7 +1201,11 @@ const AssistiveVisionPage: React.FC = () => {
                   setTutorialStep(0);
                   speak('Tutorial restarted');
                 }}
-                className="w-full bg-gray-700 hover:bg-gray-600 text-white py-4 rounded-xl text-lg font-semibold"
+                className={`w-full py-4 rounded-xl text-base sm:text-lg font-semibold transition-all hover:scale-105 shadow-lg ${
+                  settings.theme === 'light'
+                    ? 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+                    : 'bg-gray-700 text-white hover:bg-gray-600'
+                }`}
                 aria-label="Show tutorial again"
               >
                 Show Tutorial Again
