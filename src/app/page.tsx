@@ -768,35 +768,34 @@ const AssistiveVisionPage: React.FC = () => {
                 onClick={() => { switchMode('camera'); startCamera(); }}
                 className={`flex-1 py-3 sm:py-4 px-2 rounded-full text-sm sm:text-lg font-semibold shadow-lg transition-all hover:scale-105 active:scale-95 ${
                   settings.theme === 'light'
-                    ? 'bg-blue-100 text-blue-900 hover:bg-blue-200'
-                    : 'bg-gray-800/80 text-white hover:bg-gray-700/80'
+                    ? 'bg-green-500 text-white hover:bg-green-200'
+                    : 'bg-green-400 text-white hover:bg-green-700/80'
                 }`}
                 aria-label={t('cam')}
               >
-                <Camera className="mx-auto mb-1" size={20} />
-                <span className="block">{t('cam')}</span>
+                <Camera className="mx-auto mb-1" size={40} />
+            
               </button>
 
-              <button
+              <button 
                 onClick={() => switchMode('navigation')}
                 className={`flex-1 py-3 sm:py-4 px-2 rounded-full text-sm sm:text-lg font-semibold shadow-lg transition-all hover:scale-105 active:scale-95 ${
                   settings.theme === 'light'
-                    ? 'bg-green-100 text-green-900 hover:bg-green-200'
-                    : 'bg-gray-800/80 text-white hover:bg-gray-700/80'
+                    ? 'bg-blue-100 text-blue-900 hover:bg-blue-200'
+                    : 'bg-blue-800/80 text-white hover:bg-blue-700/80'
                 }`}
                 aria-label={t('navigation')}
               >
-                <Navigation className="mx-auto mb-1" size={20} />
-                <span className="block text-xs sm:text-sm">NAVI</span>
+                <Navigation className="mx-auto mb-1" size={40} />
+                
               </button>
-
               <button
                 onClick={triggerEmergency}
                 className="flex-1 py-3 sm:py-4 px-2 rounded-full text-sm sm:text-lg font-semibold shadow-lg transition-all hover:scale-105 active:scale-95 bg-red-600 text-white hover:bg-red-700"
                 aria-label={t('sos')}
               >
-                <AlertCircle className="mx-auto mb-1" size={20} />
-                <span className="block">{t('sos')}</span>
+                <AlertCircle className="mx-auto mb-1" size={40} />
+               
               </button>
             </div>
 
@@ -813,8 +812,7 @@ const AssistiveVisionPage: React.FC = () => {
                 }`}
                 aria-label={t('voice')}
               >
-                <Mic size={48} className="mb-2" />
-                <span className="text-2xl sm:text-3xl font-bold text-white">{t('voice')}</span>
+                <Mic size={96} className="mb-2" />
                 <span className="text-xs sm:text-sm mt-2 text-white/90">
                   {isListening ? t('listening') : t('tapToSpeak')}
                 </span>
