@@ -753,13 +753,31 @@ const AssistiveVisionPage: React.FC = () => {
             </div>
 
             {/* App Title */}
-            <div className="text-center mb-6 sm:mb-8">
-              <h1 className={`text-3xl sm:text-4xl font-bold mb-1 ${
+            <div className="flex items-center justify-center mb-6 sm:mb-8 gap-4">
+              
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <img
+                    src="/logo.png"
+                    alt="App Logo"
+                    className="w-12 h-12 sm:w-16 sm:h-16"
+                  />
+              <h1
+                className={`text-3xl sm:text-4xl font-bold mb-1 ${
                 settings.theme === 'light' ? 'text-gray-900' : 'text-white'
-              }`}>{t('appTitle')}</h1>
-              <p className={`text-sm sm:text-base ${
+                }`}
+              >
+                {t('appTitle')}
+              </h1>
+              </div>
+              <p
+                className={`text-sm sm:text-base ${
                 settings.theme === 'light' ? 'text-gray-600' : 'text-gray-400'
-              }`}>{t('appSubtitle')}</p>
+                }`}
+              >
+                {t('appSubtitle')}
+              </p>
+              </div>
             </div>
 
             {/* Three small oval buttons */}
