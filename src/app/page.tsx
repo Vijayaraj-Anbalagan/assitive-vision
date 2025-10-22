@@ -724,31 +724,29 @@ const AssistiveVisionPage: React.FC = () => {
         } p-4 sm:p-6`}>
           <div className="max-w-md mx-auto min-h-screen flex flex-col relative pb-32">
             {/* Top status row */}
-            <div className="flex justify-between items-center mt-4 sm:mt-6 mb-6">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className={`flex items-center gap-1.5 text-xs sm:text-sm ${
-                  settings.theme === 'light' ? 'text-gray-700' : 'text-gray-300'
-                }`}>
-                  {batteryLevel !== null && batteryLevel > 20 ? (
-                    <BatteryCharging size={18} className="text-green-500" />
-                  ) : (
-                    <Battery size={18} className={batteryLevel !== null && batteryLevel < 20 ? 'text-red-500' : 'text-gray-500'} />
-                  )}
-                  <span className="font-medium">{batteryLevel !== null ? `${batteryLevel}%` : '—'}</span>
-                </div>
+            <div className="flex justify-center items-center mt-4 sm:mt-6 mb-6 w-full">
+              <div className="flex items-center gap-4 sm:gap-6">
+              <div className={`flex items-center gap-1.5 text-xs sm:text-sm ${
+                settings.theme === 'light' ? 'text-gray-700' : 'text-gray-300'
+              }`}>
+                {batteryLevel !== null && batteryLevel > 20 ? (
+                <BatteryCharging size={24} className="text-green-500" />
+                ) : (
+                <Battery size={24} className={batteryLevel !== null && batteryLevel < 20 ? 'text-red-500' : 'text-gray-500'} />
+                )}
+              </div>
 
-                <div className={`flex items-center gap-1.5 text-xs sm:text-sm ${
-                  settings.theme === 'light' ? 'text-gray-700' : 'text-gray-300'
-                }`}>
-                  {isOnline ? (
-                    <Wifi size={18} className="text-green-500" />
-                  ) : (
-                    <WifiOff size={18} className="text-red-500" />
-                  )}
-                  <span className="font-medium">{t('online')}</span>
-                </div>
+              <div className={`flex items-center gap-1.5 text-xs sm:text-sm ${
+                settings.theme === 'light' ? 'text-gray-700' : 'text-gray-300'
+              }`}>
+                {isOnline ? (
+                <Wifi size={24} className="text-green-500" />
+                ) : (
+                <WifiOff size={24} className="text-red-500" />
+                )}
+              </div>
 
-                <MapPinned size={18} className={settings.theme === 'light' ? 'text-blue-600' : 'text-blue-400'} />
+              <MapPinned size={24} className={settings.theme === 'light' ? 'text-blue-600' : 'text-blue-400'} />
               </div>
             </div>
 
