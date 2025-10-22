@@ -1037,7 +1037,7 @@ const AssistiveVisionPage: React.FC = () => {
                 <p className={`text-sm mt-2 ${
                   settings.theme === 'light' ? 'text-gray-500' : 'text-gray-500'
                 }`}>
-                  Integrate Google Maps API for full functionality
+                  Integrate Google Maps API for full functionality ( in development ).
                 </p>
               </div>
             </div>
