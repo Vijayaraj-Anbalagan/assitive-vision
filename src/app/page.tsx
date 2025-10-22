@@ -35,8 +35,8 @@ interface TutorialStep {
 
 // Translation dictionary
 const translations: Translations = {
-  appTitle: { en: 'Assistive Vision', ta: 'உதவி பார்வை', hi: 'सहायक दृष्टि' },
-  appSubtitle: { en: 'Navigation & Safety System', ta: 'வழிசெலுத்தல் மற்றும் பாதுகாப்பு அமைப்பு', hi: 'नेविगेशन और सुरक्षा प्रणाली' },
+  appTitle: { en: 'VISORA', ta: 'விசோரா', hi: 'विसोरा' },
+  appSubtitle: { en: 'Beyond barriers Built for freedom', ta: 'தடைகளைத் தாண்டி சுதந்திரத்திற்காக கட்டப்பட்டது', hi: 'बाधाओं से परे। आज़ादी के लिए निर्मित।' },
   cameraMode: { en: 'Camera Mode', ta: 'கேமரா பயன்முறை', hi: 'कैमरा मोड' },
   navigation: { en: 'Navigation', ta: 'வழிசெலுத்தல்', hi: 'नेविगेशन' },
   settings: { en: 'Settings', ta: 'அமைப்புகள்', hi: 'सेटिंग्स' },
@@ -107,7 +107,7 @@ const AssistiveVisionPage: React.FC = () => {
 
   const tutorialSteps: TutorialStep[] = [
     {
-      title: 'Welcome to Assistive Vision! 👋',
+      title: 'Welcome to VISORA! 👋',
       message: 'This app helps you navigate safely using your camera and voice guidance. Let\'s take a quick tour!',
       target: 'home',
     },
@@ -289,40 +289,136 @@ const AssistiveVisionPage: React.FC = () => {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
+    // Draw the video frame first so we can see what we're detecting
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
 
-    let edgeCount = 0;
     const threshold = 100 - settings.sensitivity;
+    const edgeMap: boolean[][] = [];
+    
+    // Initialize edge map
+    for (let y = 0; y < canvas.height; y++) {
+      edgeMap[y] = [];
+      for (let x = 0; x < canvas.width; x++) {
+        edgeMap[y][x] = false;
+      }
+    }
 
-    for (let i = 0; i < data.length; i += 4) {
-      const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-
-      if (i + 4 < data.length) {
+    // Detect edges
+    for (let y = 0; y < canvas.height; y++) {
+      for (let x = 0; x < canvas.width - 1; x++) {
+        const i = (y * canvas.width + x) * 4;
+        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
         const nextBrightness = (data[i + 4] + data[i + 5] + data[i + 6]) / 3;
         const diff = Math.abs(brightness - nextBrightness);
 
         if (diff > threshold) {
-          edgeCount++;
-          data[i] = 255;
-          data[i + 1] = 0;
-          data[i + 2] = 0;
+          edgeMap[y][x] = true;
         }
       }
     }
 
-    ctx.putImageData(imageData, 0, 0);
+    // Find connected regions and draw rectangles
+    const visited: boolean[][] = edgeMap.map(row => row.map(() => false));
+    const regions: { minX: number; minY: number; maxX: number; maxY: number; centerX: number }[] = [];
 
-    if (edgeCount > 5000) {
-      const alertMsg = 'Obstacle detected ahead';
-      setLastAlert(alertMsg);
-      speak(alertMsg);
-      vibrate([100, 50, 100]);
+    const floodFill = (startX: number, startY: number) => {
+      const stack: [number, number][] = [[startX, startY]];
+      let minX = startX, maxX = startX, minY = startY, maxY = startY;
+      let pixelCount = 0;
+
+      while (stack.length > 0) {
+        const [x, y] = stack.pop()!;
+        
+        if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) continue;
+        if (visited[y][x] || !edgeMap[y][x]) continue;
+
+        visited[y][x] = true;
+        pixelCount++;
+
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+
+        // Check 8 neighbors
+        stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+        stack.push([x + 1, y + 1], [x - 1, y - 1], [x + 1, y - 1], [x - 1, y + 1]);
+      }
+
+      return { minX, minY, maxX, maxY, pixelCount, centerX: (minX + maxX) / 2 };
+    };
+
+    // Find all regions
+    for (let y = 0; y < canvas.height; y++) {
+      for (let x = 0; x < canvas.width; x++) {
+        if (edgeMap[y][x] && !visited[y][x]) {
+          const region = floodFill(x, y);
+          
+          // Only consider significant regions (filter out noise)
+          if (region.pixelCount > 100) {
+            const width = region.maxX - region.minX;
+            const height = region.maxY - region.minY;
+            
+            // Filter out very small or very thin regions
+            if (width > 20 && height > 20) {
+              regions.push(region);
+            }
+          }
+        }
+      }
+    }
+
+    // Draw rectangles around detected regions
+    ctx.strokeStyle = '#ff0000ff';
+    ctx.lineWidth = 3;
+    
+    regions.forEach(region => {
+      const padding = 10;
+      ctx.strokeRect(
+        region.minX - padding,
+        region.minY - padding,
+        (region.maxX - region.minX) + padding * 2,
+        (region.maxY - region.minY) + padding * 2
+      );
+    });
+
+    // Determine direction and provide feedback
+    if (regions.length > 0) {
+      const centerX = canvas.width / 2;
+      let leftCount = 0;
+      let rightCount = 0;
+
+      regions.forEach(region => {
+        if (region.centerX < centerX) {
+          leftCount++;
+        } else {
+          rightCount++;
+        }
+      });
+
+      // Provide directional feedback
+      if (rightCount > leftCount) {
+        const alertMsg = "Don't go right";
+        setLastAlert(alertMsg);
+        speak(alertMsg);
+        vibrate([200]); // Vibrate once for right
+      } else if (leftCount > rightCount) {
+        const alertMsg = "Don't go left";
+        setLastAlert(alertMsg);
+        speak(alertMsg);
+        vibrate([200, 100, 200]); // Vibrate twice for left
+      } else {
+        // Objects on both sides or centered
+        const alertMsg = 'Obstacle detected ahead';
+        setLastAlert(alertMsg);
+        speak(alertMsg);
+        vibrate([100, 50, 100]);
+      }
     }
   };
-
   const startDetection = (): void => {
     setDetectionActive(true);
     speak('Edge detection started');
